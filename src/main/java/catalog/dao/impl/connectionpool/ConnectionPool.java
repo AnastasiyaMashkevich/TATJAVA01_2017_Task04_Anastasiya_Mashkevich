@@ -2,7 +2,6 @@ package catalog.dao.impl.connectionpool;
 
 
 import org.apache.log4j.Logger;
-
 import java.sql.Array;
 import java.sql.Blob;
 import java.sql.CallableStatement;
@@ -60,7 +59,7 @@ public final class ConnectionPool { //singleton
             try {
                 instance.initPoolData();
             } catch (ConnectionPoolException e) {
-                e.printStackTrace();
+                LOG.error ("ConnectionPool Error", e);
             }
         }
         return instance;
@@ -127,16 +126,16 @@ public final class ConnectionPool { //singleton
         }
     }
 
-    public void closeConnection(Connection con, Statement st) {
+    public void closeConnection(Connection con, PreparedStatement pr) {
         try {
             con.close();
         } catch (SQLException e) {
             LOG.error("Connection isn't return to the pool.", e);
         }
         try {
-            st.close();
+            pr.close();
         } catch (SQLException e) {
-            LOG.error("Statement isn't closed.", e);
+            LOG.error("PreparedStatement isn't closed.", e);
         }
     }
 

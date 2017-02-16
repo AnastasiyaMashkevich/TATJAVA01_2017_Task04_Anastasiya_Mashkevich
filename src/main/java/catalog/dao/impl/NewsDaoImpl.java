@@ -15,7 +15,8 @@ import java.util.ArrayList;
 
 public class NewsDaoImpl implements NewsDao {
     private static final Logger LOG = LogManager.getLogger(NewsDaoImpl.class);
-    public final String INS_INTO_CATALOG = "INSERT INTO `catalog` (category, title, additionalInfo, year) VALUES ";
+    
+    public final String INS_INTO_CATALOG = "INSERT INTO `catalog` (category, title, additionalInfo, year) VALUES (?,?,?,?);";
     public final String SEL_BY_TILE = "SELECT * FROM `catalog` WHERE title like";
     public final String SEL_BY_YEAR = "SELECT * FROM `catalog` WHERE year like";
 
@@ -23,33 +24,34 @@ public class NewsDaoImpl implements NewsDao {
         LOG.info("start addNewsItem(NewsItem newItem)");
 
         Connection conn = null;
-        Statement statement = null;
+        PreparedStatement pr = null;
         try {
             conn = NewsDaoImpl.getConnect();
+            pr = conn.prepareStatement(INS_INTO_CATALOG);
+            pr.setString(1,newItem.getCategory());
+            pr.setString(2,newItem.getTitle());
+            pr.setString(3,newItem.getAdditionalInfo());
+            pr.setString(4,newItem.getYear());
+            pr.executeUpdate();
 
-            String queryUp = INS_INTO_CATALOG + "(\"" + newItem.getCategory() + "\", \"" + newItem.getTitle() + "\", \"" + newItem.getAdditionalInfo() + "\", + \"" + newItem.getYear() + "\")";
-            statement = conn.createStatement();
-            int upd = statement.executeUpdate(queryUp);
-            if (upd!=0) {
-                LOG.info("successful finish addNewsItem(NewsItem newItem)");
-                return true;
-            }
         } catch (SQLException | ConnectionPoolException e) {
-            LOG.warn("Connection Problem");
-            throw new DAOException("Connection Problem", e);
+            LOG.warn("Connection Problem. News was not add.", e);
+            return false;
         } finally {
-            ConnectionPool.getInstance().closeConnection(conn, statement);
+            ConnectionPool.getInstance().closeConnection(conn, pr);
         }
-        LOG.info("Error addNewsItem(NewsItem newItem)");
-        return false;
+        LOG.info("Successful finish addNewsItem(NewsItem newItem)");
+        return true;
     }
 
-    public ArrayList<NewsItem> searchNewsItemsByTitle(String title) throws DAOException {
+    public ArrayList<NewsItem> searchNewsItemsByTitle(String title) throws DAOException (
         LOG.info("start searchNewsItemsByTitle(String title)");
+        
         Connection conn = null;
         Statement statement = null;
         ResultSet rs = null;
         String queryToTableCatalog;
+        
         try {
             conn = NewsDaoImpl.getConnect();
             queryToTableCatalog = SEL_BY_TILE + "'%" + title + "%'";
@@ -70,12 +72,15 @@ public class NewsDaoImpl implements NewsDao {
         LOG.info("Error searchNewsItemsByTitle(String title)");
         return null;
     }
+        
     public ArrayList<NewsItem> searchNewsItemByYear(String year)throws DAOException {
         LOG.info("start searchNewsItemByYear(String year)");
+        
         Connection conn = null;
         Statement statement = null;
         ResultSet rs = null;
         String queryToTableCatalog;
+        
         try {
             conn = NewsDaoImpl.getConnect();
             queryToTableCatalog = SEL_BY_YEAR+ "'%" + year + "%'";
